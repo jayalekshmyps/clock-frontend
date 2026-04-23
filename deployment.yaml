@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clock-frontend
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: app
+        image: myacr.azurecr.io/clock-frontend:{{TAG}}
+        env:
+        - name: REACT_APP_ENV
+          value: "{{ENV}}"

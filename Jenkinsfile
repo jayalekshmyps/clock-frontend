@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'dind' }
+  agent none
 
   environment {
     REGISTRY = 'acrclock105915912.azurecr.io'
@@ -10,6 +10,7 @@ pipeline {
   stages {
 
     stage('Wait for Docker') {
+      agent { label 'dind' }
       steps {
         container('dind') {
           sh '''
@@ -25,6 +26,7 @@ pipeline {
 
     stage('Build Image') {
       steps {
+        agent { label 'dind' }
         container('dind') {
           sh '''
             echo "Building frontend image"
@@ -35,6 +37,7 @@ pipeline {
     }
 
     stage('Push Image') {
+      agent { label 'dind' }
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'acr-creds',

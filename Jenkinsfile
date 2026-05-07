@@ -1,5 +1,5 @@
 pipeline {
-  agent none
+  agent { label 'dind' }   // <-- allocate the Kubernetes agent pod for the whole pipeline
 
   environment {
     REGISTRY = 'acrclock105915912.azurecr.io'
@@ -8,9 +8,13 @@ pipeline {
   }
 
   stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
 
     stage('Wait for Docker') {
-      agent { label 'dind' }
       steps {
         container('dind') {
           sh '''
@@ -26,10 +30,8 @@ pipeline {
 
     stage('Build Image') {
       steps {
-        agent { label 'dind' }
         container('dind') {
           sh '''
-            echo "Building frontend image"
             docker build -t $REGISTRY/$IMAGE:$TAG .
           '''
         }
@@ -37,7 +39,6 @@ pipeline {
     }
 
     stage('Push Image') {
-      agent { label 'dind' }
       steps {
         withCredentials([usernamePassword(
           credentialsId: 'acr-creds',
@@ -46,10 +47,7 @@ pipeline {
         )]) {
           container('dind') {
             sh '''
-              echo "Logging in to ACR"
               echo $ACR_PASS | docker login $REGISTRY -u $ACR_USER --password-stdin
-
-              echo "Pushing image to ACR"
               docker push $REGISTRY/$IMAGE:$TAG
             '''
           }
@@ -59,11 +57,7 @@ pipeline {
   }
 
   post {
-    success {
-      echo "✅ Frontend image built and pushed successfully"
-    }
-    failure {
-      echo "❌ Frontend pipeline failed"
-    }
+    success { echo "✅ Frontend image built & pushed to ACR" }
+    failure { echo "❌ Frontend pipeline failed" }
   }
 }
